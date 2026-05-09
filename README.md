@@ -37,9 +37,23 @@ Site runs at `http://localhost:3001`.
 - **Server Components** for all data-fetching (`apiGet` uses Next.js fetch cache, 30s default).
 - **Client components** only where interactivity is needed (waitlist form, future auth).
 
+## Authentication (Clerk)
+
+Public routes work without setup. To unlock `/dashboard`, `/sign-in`, `/sign-up`:
+
+1. Create a free Clerk application at [dashboard.clerk.com](https://dashboard.clerk.com)
+2. Copy the keys into `.env.local`:
+   ```
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+   CLERK_SECRET_KEY=sk_test_...
+   ```
+3. Restart `pnpm dev`
+
+When the keys are missing, private routes show a friendly setup card instead
+of crashing. The middleware degrades to a no-op.
+
 ## Pending (next sprints)
 
-- Clerk auth integration (sign-in / sign-up / dashboard)
 - Riot account linking flow on web
 - Tournament registration UI
 - Live bracket via WebSocket

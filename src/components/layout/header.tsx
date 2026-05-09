@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { HeaderAuth } from '@/components/auth/header-auth';
 
 const NAV = [
   { href: '/tournaments', label: 'Torneos' },
@@ -27,14 +27,7 @@ export function Header() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/sign-in">Sign in</Link>
-          </Button>
-          <Button size="sm" asChild>
-            <Link href="/sign-up">Crear cuenta</Link>
-          </Button>
-        </div>
+        <HeaderAuth />
       </div>
     </header>
   );
