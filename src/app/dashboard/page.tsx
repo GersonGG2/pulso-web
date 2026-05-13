@@ -221,6 +221,24 @@ export default async function DashboardPage() {
             </Button>
           </CardContent>
         </Card>
+
+        <Card className="border-[var(--color-primary)]/30">
+          <CardHeader>
+            <div className="mb-1 flex items-center gap-2">
+              <Badge>Pro</Badge>
+            </div>
+            <CardTitle>Hazte Pulso Pro</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-[var(--color-muted-foreground)]">
+              Stats avanzados, prioridad para scouts y acceso anticipado a torneos premium.
+              $99 MXN/mes.
+            </p>
+            <Button asChild className="w-full">
+              <Link href="/subscribe">Ver plan</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </>
   );
