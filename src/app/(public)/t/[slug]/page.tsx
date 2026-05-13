@@ -1,7 +1,13 @@
 import { notFound } from 'next/navigation';
+import { auth } from '@clerk/nextjs/server';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  RegistrationActions,
+  type TournamentInfo,
+} from '@/components/tournament/registration-actions';
 import { apiGet, ApiError } from '@/lib/api';
+import { CLERK_ENABLED } from '@/lib/auth';
 import type { TournamentSummary } from '@/lib/types';
 
 interface MatchSummary {
@@ -16,6 +22,16 @@ interface MatchSummary {
     win: boolean | null;
     player: { id: string; username: string; displayName: string };
   }[];
+}
+
+interface MyRegistration {
+  id: string;
+  tournamentId: string;
+  status: 'PENDING_PAYMENT' | 'CONFIRMED' | 'CHECKED_IN' | 'WITHDRAWN' | 'DISQUALIFIED';
+  player: { id: string; username: string; displayName: string } | null;
+  team: { id: string; name: string; tag: string } | null;
+  checkedInAt: string | null;
+  registeredAt: string;
 }
 
 interface Props {
@@ -53,6 +69,27 @@ async function fetchMatches(tournamentId: string): Promise<MatchSummary[]> {
   }
 }
 
+async function fetchMyRegistration(
+  tournamentId: string,
+  token: string,
+): Promise<MyRegistration | null> {
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+    const res = await fetch(
+      `${apiUrl}/tournaments/${tournamentId}/registrations/me`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+      },
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as MyRegistration | null;
+    return data ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export default async function TournamentPage({ params }: Props) {
   const { slug } = await params;
   const tournament = await fetchTournament(slug);
@@ -60,6 +97,26 @@ export default async function TournamentPage({ params }: Props) {
 
   const matches = await fetchMatches(tournament.id);
   const rounds = groupByRound(matches);
+
+  let myRegistration: MyRegistration | null = null;
+  if (CLERK_ENABLED) {
+    const { userId, getToken } = await auth();
+    if (userId) {
+      const token = await getToken();
+      if (token) {
+        myRegistration = await fetchMyRegistration(tournament.id, token);
+      }
+    }
+  }
+
+  const tournamentInfo: TournamentInfo = {
+    id: tournament.id,
+    status: tournament.status,
+    modality: tournament.modality,
+    entryFeeMxnCents: tournament.entryFeeMxnCents,
+    registrationOpensAt: tournament.registrationOpensAt as unknown as string,
+    registrationClosesAt: tournament.registrationClosesAt as unknown as string,
+  };
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
@@ -106,6 +163,11 @@ export default async function TournamentPage({ params }: Props) {
           }
         />
       </div>
+
+      <RegistrationActions
+        tournament={tournamentInfo}
+        initialRegistration={myRegistration}
+      />
 
       <h2 className="mb-4 text-xl font-semibold tracking-tight">Bracket</h2>
       {rounds.length === 0 ? (
