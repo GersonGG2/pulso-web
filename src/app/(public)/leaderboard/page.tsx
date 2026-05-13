@@ -1,5 +1,8 @@
 import Link from 'next/link';
+import { Trophy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/feedback/empty-state';
+import { ErrorState } from '@/components/feedback/error-state';
 import { apiGet, ApiError } from '@/lib/api';
 import type { PaginatedList, PlayerSummary } from '@/lib/types';
 
@@ -31,7 +34,7 @@ export default async function LeaderboardPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
-      <div className="mb-8">
+      <header className="mb-8">
         <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
           Leaderboard
         </h1>
@@ -39,17 +42,18 @@ export default async function LeaderboardPage() {
           Top jugadores por ZScore. Ranking público y auditable basado en partidas oficiales en
           Pulso.
         </p>
-      </div>
+      </header>
 
       {!data ? (
-        <EmptyState
+        <ErrorState
           title="No pudimos cargar el leaderboard"
-          body="El backend no está disponible. Si estás en local, verifica que pulso-backend esté corriendo en el puerto 3000."
+          description="Verifica que el backend esté disponible y vuelve a intentar."
         />
       ) : data.items.length === 0 ? (
         <EmptyState
+          icon={Trophy}
           title="Aún no hay jugadores rankeados"
-          body="El leaderboard se llenará a medida que jueguen sus primeras partidas oficiales."
+          description="El leaderboard se llenará a medida que se jueguen las primeras partidas oficiales."
         />
       ) : (
         <div className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-card)]">
@@ -66,12 +70,15 @@ export default async function LeaderboardPage() {
             </thead>
             <tbody className="divide-y divide-[var(--color-border)]">
               {data.items.map((p, i) => (
-                <tr key={p.id} className="transition-colors hover:bg-[var(--color-muted)]/40">
+                <tr
+                  key={p.id}
+                  className="transition-base hover:bg-[var(--color-muted)]/40"
+                >
                   <td className="px-4 py-3 font-mono text-xs sm:px-6">{i + 1}</td>
                   <td className="px-4 py-3">
                     <Link
                       href={`/players/${p.user.username}`}
-                      className="font-medium hover:text-[var(--color-primary)]"
+                      className="font-medium transition-base hover:text-[var(--color-primary)]"
                     >
                       {p.user.displayName}
                     </Link>
@@ -97,15 +104,6 @@ export default async function LeaderboardPage() {
           </table>
         </div>
       )}
-    </div>
-  );
-}
-
-function EmptyState({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="rounded-lg border border-dashed border-[var(--color-border)] p-12 text-center">
-      <h2 className="text-lg font-semibold">{title}</h2>
-      <p className="mt-2 text-sm text-[var(--color-muted-foreground)]">{body}</p>
     </div>
   );
 }

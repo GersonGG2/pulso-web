@@ -1,35 +1,103 @@
 @import 'tailwindcss';
 
 @theme {
-  /* Pulso palette — dark base + lime accent */
-  --color-background: #0a0b0f;
-  --color-foreground: #f8fafc;
-  --color-muted: #1a1b22;
-  --color-muted-foreground: #94a3b8;
-  --color-border: #1f2230;
-  --color-input: #1a1b22;
-  --color-ring: #a3e635;
+  /* =====================================================
+   * Pulso Design Tokens — v1
+   * =====================================================
+   *
+   * Filosofía: minimal-tech con acento esports (lima neón).
+   * Single source of truth. Cualquier nuevo color/tamaño se
+   * define aquí y se consume en componentes vía CSS vars.
+   */
 
-  --color-primary: #a3e635;
-  --color-primary-foreground: #0a0b0f;
-  --color-secondary: #1a1b22;
-  --color-secondary-foreground: #f8fafc;
-  --color-accent: #a3e635;
-  --color-accent-foreground: #0a0b0f;
-  --color-destructive: #ef4444;
-  --color-destructive-foreground: #f8fafc;
-  --color-card: #11131a;
-  --color-card-foreground: #f8fafc;
-  --color-popover: #11131a;
-  --color-popover-foreground: #f8fafc;
+  /* ===== Brand palette ===== */
+  --color-brand-50:  #f4fde0;
+  --color-brand-100: #e8fcc0;
+  --color-brand-200: #d4f985;
+  --color-brand-300: #c0f655;
+  --color-brand-400: #b1f039;
+  --color-brand-500: #a3e635;
+  --color-brand-600: #84d92a;
+  --color-brand-700: #65b91f;
+  --color-brand-800: #4a8c17;
+  --color-brand-900: #2f5d0e;
 
-  /* Typography */
+  /* ===== Neutrals ===== */
+  --color-neutral-0:    #ffffff;
+  --color-neutral-50:   #f8fafc;
+  --color-neutral-100:  #e2e8f0;
+  --color-neutral-200:  #cbd5e1;
+  --color-neutral-300:  #94a3b8;
+  --color-neutral-400:  #64748b;
+  --color-neutral-500:  #475569;
+  --color-neutral-600:  #334155;
+  --color-neutral-700:  #1f2230;
+  --color-neutral-800:  #11131a;
+  --color-neutral-900:  #0a0b0f;
+
+  /* ===== Semantic ===== */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-info:    #3b82f6;
+  --color-danger:  #ef4444;
+
+  /* ===== Aliases (lo que consumen los componentes) ===== */
+  --color-background:          var(--color-neutral-900);
+  --color-foreground:          var(--color-neutral-50);
+  --color-muted:               var(--color-neutral-700);
+  --color-muted-foreground:    var(--color-neutral-300);
+  --color-border:              var(--color-neutral-700);
+  --color-input:               var(--color-neutral-700);
+  --color-ring:                var(--color-brand-500);
+
+  --color-primary:             var(--color-brand-500);
+  --color-primary-hover:       var(--color-brand-400);
+  --color-primary-foreground:  var(--color-neutral-900);
+
+  --color-secondary:             var(--color-neutral-700);
+  --color-secondary-foreground:  var(--color-foreground);
+
+  --color-accent:                var(--color-brand-500);
+  --color-accent-foreground:     var(--color-neutral-900);
+
+  --color-destructive:             var(--color-danger);
+  --color-destructive-foreground:  var(--color-neutral-50);
+
+  --color-card:           var(--color-neutral-800);
+  --color-card-foreground: var(--color-foreground);
+  --color-popover:        var(--color-neutral-800);
+  --color-popover-foreground: var(--color-foreground);
+
+  /* ===== Typography ===== */
   --font-sans:
-    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    var(--font-inter),
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  --font-mono:
+    var(--font-jetbrains-mono),
+    'SF Mono',
+    Menlo,
+    monospace;
+  --font-display:
+    var(--font-russo-one),
+    'Impact',
+    sans-serif;
 
-  /* Radii */
-  --radius: 0.625rem;
+  /* ===== Spacing scale (ya viene de tailwind, pero re-expuesto) ===== */
+  --radius-sm: 0.25rem;
+  --radius:    0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.25rem;
+  --radius-full: 9999px;
+
+  /* ===== Shadows ===== */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow:    0 4px 12px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.35);
+  --shadow-glow: 0 0 32px var(--color-brand-500);
 }
 
 * {
@@ -60,4 +128,14 @@ a {
 ::selection {
   background-color: var(--color-primary);
   color: var(--color-primary-foreground);
+}
+
+/* Reusable transition tokens for microinteractions */
+.transition-base {
+  transition:
+    color 120ms ease,
+    background-color 120ms ease,
+    border-color 120ms ease,
+    opacity 120ms ease,
+    transform 120ms ease;
 }
