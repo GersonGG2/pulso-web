@@ -207,6 +207,20 @@ export default async function DashboardPage() {
             </Button>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Tus equipos</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-[var(--color-muted-foreground)]">
+              Crea un equipo 5v5 o gestiona uno donde ya eres miembro.
+            </p>
+            <Button variant="outline" asChild className="w-full">
+              <Link href="/dashboard/teams">Ver equipos</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </>
   );
