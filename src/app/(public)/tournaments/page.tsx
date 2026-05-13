@@ -1,6 +1,9 @@
 import Link from 'next/link';
+import { Calendar, Trophy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { EmptyState } from '@/components/feedback/empty-state';
+import { ErrorState } from '@/components/feedback/error-state';
 import { apiGet, ApiError } from '@/lib/api';
 import type { PaginatedList, TournamentSummary } from '@/lib/types';
 
@@ -46,18 +49,22 @@ export default async function TournamentsPage() {
         </div>
       </div>
 
-      {!data || data.items.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-[var(--color-border)] p-12 text-center">
-          <h2 className="text-lg font-semibold">Aún no hay torneos publicados</h2>
-          <p className="mt-2 text-sm text-[var(--color-muted-foreground)]">
-            Cuando un organizador publique su primer torneo, aparecerá aquí.
-          </p>
-        </div>
+      {!data ? (
+        <ErrorState
+          title="No pudimos cargar los torneos"
+          description="Verifica que el backend esté disponible y vuelve a intentar."
+        />
+      ) : data.items.length === 0 ? (
+        <EmptyState
+          icon={Trophy}
+          title="Aún no hay torneos publicados"
+          description="Cuando un organizador publique su primer torneo, aparecerá aquí."
+        />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {data.items.map((t) => (
             <Link key={t.id} href={`/t/${t.slug}`} className="group">
-              <Card className="h-full transition-colors group-hover:border-[var(--color-primary)]/40">
+              <Card className="h-full transition-base group-hover:border-[var(--color-primary)]/40">
                 <CardHeader>
                   <div className="mb-2 flex items-center gap-2">
                     <Badge variant="outline">{t.modality.replace('_', ' ')}</Badge>

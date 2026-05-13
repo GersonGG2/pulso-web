@@ -1,10 +1,11 @@
 import { auth } from '@clerk/nextjs/server';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Plus } from 'lucide-react';
+import { Plus, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { EmptyState } from '@/components/feedback/empty-state';
 import { ClerkNotConfigured } from '@/components/auth/clerk-not-configured';
 import { CLERK_ENABLED } from '@/lib/auth';
 
@@ -98,11 +99,16 @@ export default async function TeamsPage() {
       </header>
 
       {teams.length === 0 ? (
-        <Card>
-          <CardContent className="py-10 text-center text-sm text-[var(--color-muted-foreground)]">
-            Aún no estás en ningún equipo. Crea el tuyo o pide a un captain que te invite.
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Users}
+          title="Aún no estás en ningún equipo"
+          description="Crea el tuyo y vuélvete captain, o pide a un captain existente que te invite."
+          action={
+            <Button asChild>
+              <Link href="/dashboard/teams/new">Crear mi primer equipo</Link>
+            </Button>
+          }
+        />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {teams.map((t) => {
@@ -110,7 +116,7 @@ export default async function TeamsPage() {
             const activeMembers = t.members.filter((m) => !m.leftAt).length;
             return (
               <Link key={t.id} href={`/dashboard/teams/${t.id}`} className="group">
-                <Card className="h-full transition-colors group-hover:border-[var(--color-primary)]/40">
+                <Card className="h-full transition-base group-hover:border-[var(--color-primary)]/40">
                   <CardHeader>
                     <div className="mb-2 flex items-center gap-2">
                       <Badge variant="outline">{t.country}</Badge>
