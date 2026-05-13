@@ -193,6 +193,20 @@ export default async function DashboardPage() {
             </Button>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Organiza torneos</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-[var(--color-muted-foreground)]">
+              Crea, publica y gestiona tus propios torneos. Aprobación automática en MVP.
+            </p>
+            <Button variant="outline" asChild className="w-full">
+              <Link href="/dashboard/organizer">Ir al panel de organizador</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </>
   );
