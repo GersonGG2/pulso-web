@@ -1,7 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import { TeamManagement } from '@/components/team/team-management';
+import { TeamRoster } from '@/components/team/team-roster';
 import { ClerkNotConfigured } from '@/components/auth/clerk-not-configured';
 import { CLERK_ENABLED } from '@/lib/auth';
 
@@ -22,6 +22,7 @@ interface TeamDetail {
     id: string;
     playerId: string;
     role: 'STARTER' | 'SUBSTITUTE' | 'COACH' | 'MANAGER';
+    lolRole: 'TOP' | 'JUNGLE' | 'MID' | 'ADC' | 'SUPPORT' | null;
     isCaptain: boolean;
     joinedAt: string;
     leftAt: string | null;
@@ -75,7 +76,7 @@ export default async function TeamDetailPage({ params }: Props) {
           ← Equipos
         </Link>
       </header>
-      <TeamManagement team={team} myPlayerId={myPlayerId} />
+      <TeamRoster team={team} myPlayerId={myPlayerId} />
     </>
   );
 }

@@ -5,6 +5,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ClerkNotConfigured } from '@/components/auth/clerk-not-configured';
+import { FadeIn, Stagger, StaggerItem, HoverLift } from '@/components/motion';
+import {
+  PendingInvitations,
+  type PendingInvitation,
+} from '@/components/free-agents/pending-invitations';
 import { CLERK_ENABLED } from '@/lib/auth';
 
 export const metadata = {
@@ -37,13 +42,15 @@ interface PlayerState {
 async function loadDashboardState(token: string): Promise<{
   riot: RiotAccountState;
   player: PlayerState;
+  invitations: PendingInvitation[];
 }> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
   const headers = { Authorization: `Bearer ${token}` };
 
-  const [riotRes, playerRes] = await Promise.all([
+  const [riotRes, playerRes, invitationsRes] = await Promise.all([
     fetch(`${apiUrl}/riot-account/me`, { headers, cache: 'no-store' }),
     fetch(`${apiUrl}/players/me`, { headers, cache: 'no-store' }),
+    fetch(`${apiUrl}/free-agent-invitations/me`, { headers, cache: 'no-store' }),
   ]);
 
   return {
@@ -55,6 +62,7 @@ async function loadDashboardState(token: string): Promise<{
       created: playerRes.ok,
       data: playerRes.ok ? await playerRes.json() : null,
     },
+    invitations: invitationsRes.ok ? await invitationsRes.json() : [],
   };
 }
 
@@ -66,7 +74,11 @@ export default async function DashboardPage() {
   const token = await getToken();
   const state = token
     ? await loadDashboardState(token)
-    : { riot: { linked: false, data: null }, player: { created: false, data: null } };
+    : {
+        riot: { linked: false, data: null },
+        player: { created: false, data: null },
+        invitations: [] as PendingInvitation[],
+      };
 
   const displayName = user.firstName ?? user.username ?? 'Jugador';
   const riotLinked = state.riot.linked;
@@ -75,27 +87,35 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Hola, {displayName}</h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
-            {fullySetup
-              ? 'Tu perfil está completo. Ya estás en el talent graph público.'
-              : 'Completa tu perfil para empezar a competir y ser visible.'}
-          </p>
-        </div>
-        {state.player.data && (
-          <div className="flex items-center gap-3">
-            <Badge variant="outline">Tier {state.player.data.tier}</Badge>
-            <span className="font-mono text-2xl font-semibold text-[var(--color-primary)]">
-              {state.player.data.zScore}
-            </span>
+      <FadeIn>
+        <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight">Hola, {displayName}</h1>
+            <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
+              {fullySetup
+                ? 'Tu perfil está completo. Ya estás en el talent graph público.'
+                : 'Completa tu perfil para empezar a competir y ser visible.'}
+            </p>
           </div>
-        )}
-      </header>
+          {state.player.data && (
+            <div className="flex items-center gap-3">
+              <Badge variant="outline">Tier {state.player.data.tier}</Badge>
+              <span className="font-mono text-2xl font-semibold text-[var(--color-primary)]">
+                {state.player.data.zScore}
+              </span>
+            </div>
+          )}
+        </header>
+      </FadeIn>
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <Card>
+      {state.invitations.length > 0 && (
+        <div className="mb-6">
+          <PendingInvitations initialInvitations={state.invitations} />
+        </div>
+      )}
+
+      <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" delay={0.15}>
+        <StaggerItem><HoverLift className="h-full"><Card className="h-full">
           <CardHeader>
             <div className="mb-1 flex items-center gap-2">
               {riotLinked && (
@@ -132,9 +152,9 @@ export default async function DashboardPage() {
               </>
             )}
           </CardContent>
-        </Card>
+        </Card></HoverLift></StaggerItem>
 
-        <Card>
+        <StaggerItem><HoverLift className="h-full"><Card className="h-full">
           <CardHeader>
             <div className="mb-1 flex items-center gap-2">
               {playerCreated && (
@@ -178,9 +198,9 @@ export default async function DashboardPage() {
               </>
             )}
           </CardContent>
-        </Card>
+        </Card></HoverLift></StaggerItem>
 
-        <Card>
+        <StaggerItem><HoverLift className="h-full"><Card className="h-full">
           <CardHeader>
             <CardTitle>Explora torneos</CardTitle>
           </CardHeader>
@@ -192,9 +212,9 @@ export default async function DashboardPage() {
               <Link href="/tournaments">Ver torneos</Link>
             </Button>
           </CardContent>
-        </Card>
+        </Card></HoverLift></StaggerItem>
 
-        <Card>
+        <StaggerItem><HoverLift className="h-full"><Card className="h-full">
           <CardHeader>
             <CardTitle>Organiza torneos</CardTitle>
           </CardHeader>
@@ -206,9 +226,9 @@ export default async function DashboardPage() {
               <Link href="/dashboard/organizer">Ir al panel de organizador</Link>
             </Button>
           </CardContent>
-        </Card>
+        </Card></HoverLift></StaggerItem>
 
-        <Card>
+        <StaggerItem><HoverLift className="h-full"><Card className="h-full">
           <CardHeader>
             <CardTitle>Tus equipos</CardTitle>
           </CardHeader>
@@ -220,9 +240,9 @@ export default async function DashboardPage() {
               <Link href="/dashboard/teams">Ver equipos</Link>
             </Button>
           </CardContent>
-        </Card>
+        </Card></HoverLift></StaggerItem>
 
-        <Card className="border-[var(--color-primary)]/30">
+        <StaggerItem><HoverLift className="h-full"><Card className="h-full border-[var(--color-primary)]/30">
           <CardHeader>
             <div className="mb-1 flex items-center gap-2">
               <Badge>Pro</Badge>
@@ -238,8 +258,8 @@ export default async function DashboardPage() {
               <Link href="/subscribe">Ver plan</Link>
             </Button>
           </CardContent>
-        </Card>
-      </div>
+        </Card></HoverLift></StaggerItem>
+      </Stagger>
     </>
   );
 }

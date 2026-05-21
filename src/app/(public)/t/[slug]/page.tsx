@@ -2,10 +2,13 @@ import { notFound } from 'next/navigation';
 import { auth } from '@clerk/nextjs/server';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FadeIn, Reveal, Stagger, StaggerItem, HoverLift } from '@/components/motion';
 import {
   RegistrationActions,
   type TournamentInfo,
 } from '@/components/tournament/registration-actions';
+import { FreeAgentPool } from '@/components/free-agents/free-agent-pool';
+import type { FreeAgent } from '@/components/free-agents/free-agent-card';
 import { apiGet, ApiError } from '@/lib/api';
 import { CLERK_ENABLED } from '@/lib/auth';
 import type { TournamentSummary } from '@/lib/types';
@@ -69,6 +72,79 @@ async function fetchMatches(tournamentId: string): Promise<MatchSummary[]> {
   }
 }
 
+async function fetchFreeAgentPool(tournamentId: string): Promise<FreeAgent[]> {
+  try {
+    return await apiGet<FreeAgent[]>(`/tournaments/${tournamentId}/free-agents`, 0);
+  } catch {
+    return [];
+  }
+}
+
+interface MyCaptainTeam {
+  id: string;
+  name: string;
+  tag: string;
+}
+
+async function fetchMyState(
+  tournamentId: string,
+  token: string,
+): Promise<{
+  player: { id: string } | null;
+  myFreeAgentId: string | null;
+  captainOfTeam: MyCaptainTeam | null;
+}> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+  const headers = { Authorization: `Bearer ${token}` };
+
+  const playerRes = await fetch(`${apiUrl}/players/me`, { headers, cache: 'no-store' });
+  if (!playerRes.ok) {
+    return { player: null, myFreeAgentId: null, captainOfTeam: null };
+  }
+  const player = (await playerRes.json()) as { id: string };
+
+  // Try to find if I'm currently a free agent in this tournament.
+  let myFreeAgentId: string | null = null;
+  try {
+    const poolRes = await fetch(
+      `${apiUrl}/tournaments/${tournamentId}/free-agents`,
+      { headers, cache: 'no-store' },
+    );
+    if (poolRes.ok) {
+      const pool = (await poolRes.json()) as { id: string; player: { id: string } }[];
+      myFreeAgentId = pool.find((p) => p.player.id === player.id)?.id ?? null;
+    }
+  } catch {
+    // ignore
+  }
+
+  // Try to find my first team where I'm captain (MVP: pick the first one).
+  let captainOfTeam: MyCaptainTeam | null = null;
+  try {
+    const myTeamsRes = await fetch(`${apiUrl}/teams/me`, { headers, cache: 'no-store' });
+    if (myTeamsRes.ok) {
+      const teams = (await myTeamsRes.json()) as {
+        id: string;
+        name: string;
+        tag: string;
+        members: { playerId: string; isCaptain: boolean; leftAt: string | null }[];
+      }[];
+      const captainTeam = teams.find((t) =>
+        t.members.some(
+          (m) => m.playerId === player.id && m.isCaptain && !m.leftAt,
+        ),
+      );
+      if (captainTeam) {
+        captainOfTeam = { id: captainTeam.id, name: captainTeam.name, tag: captainTeam.tag };
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  return { player, myFreeAgentId, captainOfTeam };
+}
+
 async function fetchMyRegistration(
   tournamentId: string,
   token: string,
@@ -99,15 +175,27 @@ export default async function TournamentPage({ params }: Props) {
   const rounds = groupByRound(matches);
 
   let myRegistration: MyRegistration | null = null;
+  let myFreeAgentId: string | null = null;
+  let captainOfTeam: MyCaptainTeam | null = null;
+  let hasPlayerProfile = false;
+  let isSignedIn = false;
   if (CLERK_ENABLED) {
     const { userId, getToken } = await auth();
     if (userId) {
+      isSignedIn = true;
       const token = await getToken();
       if (token) {
         myRegistration = await fetchMyRegistration(tournament.id, token);
+        const state = await fetchMyState(tournament.id, token);
+        hasPlayerProfile = !!state.player;
+        myFreeAgentId = state.myFreeAgentId;
+        captainOfTeam = state.captainOfTeam;
       }
     }
   }
+
+  const showFreeAgentPool = tournament.modality === 'TEAM_5V5';
+  const freeAgentPool = showFreeAgentPool ? await fetchFreeAgentPool(tournament.id) : [];
 
   const tournamentInfo: TournamentInfo = {
     id: tournament.id,
@@ -120,30 +208,32 @@ export default async function TournamentPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
-      <header className="mb-8">
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <Badge variant="outline">{tournament.modality.replace('_', ' ')}</Badge>
-          <Badge>{tournament.status}</Badge>
-          <Badge variant="outline">{tournament.region}</Badge>
-        </div>
-        <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
-          {tournament.name}
-        </h1>
-        <p className="mt-3 max-w-2xl text-[var(--color-muted-foreground)]">
-          {tournament.description}
-        </p>
-        <p className="mt-3 text-sm text-[var(--color-muted-foreground)]">
-          Organiza{' '}
-          <span className="text-[var(--color-foreground)]">
-            {tournament.organizer.organizationName}
-          </span>
-          {tournament.organizer.verified && (
-            <span className="ml-2 text-[var(--color-primary)]">✓ Verificado</span>
-          )}
-        </p>
-      </header>
+      <FadeIn>
+        <header className="mb-8">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <Badge variant="outline">{tournament.modality.replace('_', ' ')}</Badge>
+            <Badge>{tournament.status}</Badge>
+            <Badge variant="outline">{tournament.region}</Badge>
+          </div>
+          <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+            {tournament.name}
+          </h1>
+          <p className="mt-3 max-w-2xl text-[var(--color-muted-foreground)]">
+            {tournament.description}
+          </p>
+          <p className="mt-3 text-sm text-[var(--color-muted-foreground)]">
+            Organiza{' '}
+            <span className="text-[var(--color-foreground)]">
+              {tournament.organizer.organizationName}
+            </span>
+            {tournament.organizer.verified && (
+              <span className="ml-2 text-[var(--color-primary)]">✓ Verificado</span>
+            )}
+          </p>
+        </header>
+      </FadeIn>
 
-      <div className="mb-10 grid gap-4 sm:grid-cols-3">
+      <Stagger className="mb-10 grid gap-4 sm:grid-cols-3" delay={0.1}>
         <Stat label="Cupo" value={String(tournament.maxParticipants)} />
         <Stat
           label="Inicio"
@@ -162,20 +252,35 @@ export default async function TournamentPage({ params }: Props) {
               : `$${(tournament.entryFeeMxnCents / 100).toFixed(0)} MXN`
           }
         />
-      </div>
+      </Stagger>
 
       <RegistrationActions
         tournament={tournamentInfo}
         initialRegistration={myRegistration}
       />
 
-      <h2 className="mb-4 text-xl font-semibold tracking-tight">Bracket</h2>
+      {showFreeAgentPool && (
+        <div className="mb-10">
+          <FreeAgentPool
+            tournamentId={tournament.id}
+            initialPool={freeAgentPool}
+            isSignedIn={isSignedIn}
+            hasPlayerProfile={hasPlayerProfile}
+            myFreeAgentId={myFreeAgentId}
+            canManageTeam={captainOfTeam}
+          />
+        </div>
+      )}
+
+      <Reveal>
+        <h2 className="mb-4 text-xl font-semibold tracking-tight">Bracket</h2>
+      </Reveal>
       {rounds.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-[var(--color-border)] p-12 text-center">
+        <Reveal className="rounded-lg border border-dashed border-[var(--color-border)] p-12 text-center">
           <p className="text-[var(--color-muted-foreground)]">
             El bracket se generará cuando el organizador inicie el torneo.
           </p>
-        </div>
+        </Reveal>
       ) : (
         <div className="flex gap-6 overflow-x-auto pb-4">
           {rounds.map((round, idx) => (
@@ -219,12 +324,14 @@ export default async function TournamentPage({ params }: Props) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] p-4">
-      <p className="text-xs uppercase tracking-wider text-[var(--color-muted-foreground)]">
-        {label}
-      </p>
-      <p className="mt-1 text-lg font-semibold">{value}</p>
-    </div>
+    <StaggerItem>
+      <HoverLift className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] p-4">
+        <p className="text-xs uppercase tracking-wider text-[var(--color-muted-foreground)]">
+          {label}
+        </p>
+        <p className="mt-1 text-lg font-semibold">{value}</p>
+      </HoverLift>
+    </StaggerItem>
   );
 }
 

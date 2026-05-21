@@ -1,7 +1,6 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -37,7 +36,6 @@ const REGIONS: { value: Region; label: string }[] = [
 ];
 
 export function RiotLinkFlow({ alreadyLinked }: { alreadyLinked: boolean }) {
-  const router = useRouter();
   const api = useApiClient();
 
   const [step, setStep] = useState<'idle' | 'pending' | 'done'>(

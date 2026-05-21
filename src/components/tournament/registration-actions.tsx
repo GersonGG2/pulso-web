@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { useConfirm } from '@/components/ui/use-confirm';
 import { ApiError, useApiClient } from '@/lib/api-client';
 
 type Modality = 'SOLO_1V1' | 'TEAM_5V5' | 'ARAM';
@@ -48,6 +49,7 @@ export function RegistrationActions({
   const { isSignedIn } = useAuth();
   const router = useRouter();
   const api = useApiClient();
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   const [registration, setRegistration] = useState<Registration | null>(initialRegistration);
   const [teamId, setTeamId] = useState('');
@@ -59,7 +61,6 @@ export function RegistrationActions({
   const opens = new Date(tournament.registrationOpensAt).getTime();
   const closes = new Date(tournament.registrationClosesAt).getTime();
 
-  const inWindow = now >= opens && now < closes;
   const beforeWindow = now < opens;
   const afterWindow = now >= closes;
   const isPublished = tournament.status === 'PUBLISHED';
@@ -101,7 +102,14 @@ export function RegistrationActions({
 
   async function withdraw() {
     if (!registration) return;
-    if (!confirm('¿Seguro que quieres bajarte del torneo?')) return;
+    const ok = await confirm({
+      title: 'Bajarte del torneo',
+      description:
+        'Tu inscripción quedará como WITHDRAWN. Si las inscripciones siguen abiertas puedes volver a inscribirte después.',
+      confirmLabel: 'Bajarme',
+      variant: 'destructive',
+    });
+    if (!ok) return;
     setError(null);
     setBusy(true);
     try {
@@ -134,7 +142,9 @@ export function RegistrationActions({
 
   if (registration && registration.status !== 'WITHDRAWN' && registration.status !== 'DISQUALIFIED') {
     return (
-      <RegistrationCard title="Tu inscripción">
+      <>
+        {confirmDialog}
+        <RegistrationCard title="Tu inscripción">
         <div className="flex flex-wrap items-center gap-2">
           <Badge>
             <Check className="mr-1 h-3 w-3" />
@@ -177,6 +187,7 @@ export function RegistrationActions({
           </Button>
         </div>
       </RegistrationCard>
+      </>
     );
   }
 

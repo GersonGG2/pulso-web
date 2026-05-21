@@ -7,6 +7,7 @@ import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useConfirm } from '@/components/ui/use-confirm';
 import { ApiError, useApiClient } from '@/lib/api-client';
 
 type TournamentStatus =
@@ -49,6 +50,7 @@ export function TournamentManagement({
 }) {
   const router = useRouter();
   const api = useApiClient();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [status, setStatus] = useState<TournamentStatus>(tournament.status);
   const [matches, setMatches] = useState<Match[]>(initialMatches);
   const [busy, setBusy] = useState<string | null>(null);
@@ -78,7 +80,13 @@ export function TournamentManagement({
   }
 
   async function cancel() {
-    if (!confirm('¿Cancelar este torneo? La acción no es reversible.')) return;
+    const ok = await confirm({
+      title: 'Cancelar torneo',
+      description: `Vas a cancelar "${tournament.name}". La acción no es reversible.`,
+      confirmLabel: 'Cancelar torneo',
+      variant: 'destructive',
+    });
+    if (!ok) return;
     const result = await run('cancel', () =>
       api.post<{ status: TournamentStatus }>(`/tournaments/${tournament.id}/cancel`),
     );
@@ -118,6 +126,7 @@ export function TournamentManagement({
 
   return (
     <div className="space-y-6">
+      {confirmDialog}
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-3">

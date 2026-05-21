@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FadeIn, Stagger, StaggerItem, HoverLift } from '@/components/motion';
 import { apiGet, ApiError } from '@/lib/api';
 import type { PlayerTier } from '@/lib/types';
 
@@ -77,31 +78,35 @@ export default async function PlayerProfilePage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-      <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight">{user.displayName}</h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">@{user.username}</p>
-        </div>
-        {player && (
-          <div className="flex items-center gap-3">
-            <Badge variant="outline">{player.tier}</Badge>
-            {player.isPro && <Badge>Pro</Badge>}
-            {player.recruitable && <Badge variant="outline">Recruitable</Badge>}
+      <FadeIn>
+        <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight">{user.displayName}</h1>
+            <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">@{user.username}</p>
           </div>
-        )}
-      </header>
+          {player && (
+            <div className="flex items-center gap-3">
+              <Badge variant="outline">{player.tier}</Badge>
+              {player.isPro && <Badge>Pro</Badge>}
+              {player.recruitable && <Badge variant="outline">Recruitable</Badge>}
+            </div>
+          )}
+        </header>
+      </FadeIn>
 
       {!player ? (
-        <Card>
-          <CardContent className="py-10 text-center">
-            <p className="text-[var(--color-muted-foreground)]">
-              Este usuario aún no tiene perfil de jugador en Pulso.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2">
+        <FadeIn delay={0.1}>
           <Card>
+            <CardContent className="py-10 text-center">
+              <p className="text-[var(--color-muted-foreground)]">
+                Este usuario aún no tiene perfil de jugador en Pulso.
+              </p>
+            </CardContent>
+          </Card>
+        </FadeIn>
+      ) : (
+        <Stagger className="grid gap-6 md:grid-cols-2" delay={0.1}>
+          <StaggerItem><HoverLift className="h-full"><Card className="h-full">
             <CardHeader>
               <CardTitle>ZScore</CardTitle>
             </CardHeader>
@@ -114,9 +119,9 @@ export default async function PlayerProfilePage({ params }: Props) {
                 {player.city ? ` · ${player.city}` : ''}
               </p>
             </CardContent>
-          </Card>
+          </Card></HoverLift></StaggerItem>
 
-          <Card>
+          <StaggerItem><HoverLift className="h-full"><Card className="h-full">
             <CardHeader>
               <CardTitle>Rol</CardTitle>
             </CardHeader>
@@ -130,10 +135,10 @@ export default async function PlayerProfilePage({ params }: Props) {
                 <span className="font-medium">{player.secondaryRole ?? '—'}</span>
               </p>
             </CardContent>
-          </Card>
+          </Card></HoverLift></StaggerItem>
 
           {player.riotAccount && (
-            <Card className="md:col-span-2">
+            <StaggerItem className="md:col-span-2"><HoverLift><Card>
               <CardHeader>
                 <CardTitle>Cuenta de League of Legends</CardTitle>
               </CardHeader>
@@ -154,9 +159,9 @@ export default async function PlayerProfilePage({ params }: Props) {
                   {player.riotAccount.highestRankEver ?? '—'}
                 </p>
               </CardContent>
-            </Card>
+            </Card></HoverLift></StaggerItem>
           )}
-        </div>
+        </Stagger>
       )}
     </div>
   );

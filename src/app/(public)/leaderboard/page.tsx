@@ -3,6 +3,7 @@ import { Trophy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/feedback/empty-state';
 import { ErrorState } from '@/components/feedback/error-state';
+import { FadeIn, Reveal } from '@/components/motion';
 import { apiGet, ApiError } from '@/lib/api';
 import type { PaginatedList, PlayerSummary } from '@/lib/types';
 
@@ -34,15 +35,17 @@ export default async function LeaderboardPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
-      <header className="mb-8">
-        <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
-          Leaderboard
-        </h1>
-        <p className="mt-3 text-[var(--color-muted-foreground)]">
-          Top jugadores por ZScore. Ranking público y auditable basado en partidas oficiales en
-          Pulso.
-        </p>
-      </header>
+      <FadeIn>
+        <header className="mb-8">
+          <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+            Leaderboard
+          </h1>
+          <p className="mt-3 text-[var(--color-muted-foreground)]">
+            Top jugadores por ZScore. Ranking público y auditable basado en partidas oficiales en
+            Pulso.
+          </p>
+        </header>
+      </FadeIn>
 
       {!data ? (
         <ErrorState
@@ -56,7 +59,7 @@ export default async function LeaderboardPage() {
           description="El leaderboard se llenará a medida que se jueguen las primeras partidas oficiales."
         />
       ) : (
-        <div className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-card)]">
+        <Reveal className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-card)]">
           <table className="w-full text-sm">
             <thead className="border-b border-[var(--color-border)] text-left text-xs uppercase tracking-wider text-[var(--color-muted-foreground)]">
               <tr>
@@ -102,7 +105,7 @@ export default async function LeaderboardPage() {
               ))}
             </tbody>
           </table>
-        </div>
+        </Reveal>
       )}
     </div>
   );

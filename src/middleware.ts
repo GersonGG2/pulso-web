@@ -1,5 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
-import { NextResponse, type NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 const CLERK_ENABLED = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
@@ -15,7 +15,7 @@ const middleware = CLERK_ENABLED
         await auth.protect();
       }
     })
-  : function noopMiddleware(_req: NextRequest) {
+  : function noopMiddleware() {
       return NextResponse.next();
     };
 

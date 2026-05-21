@@ -1,4 +1,7 @@
+'use client';
+
 import { Trophy, Eye, ShieldCheck } from 'lucide-react';
+import { Reveal, Stagger, StaggerItem, HoverLift } from '@/components/motion';
 
 const PROPS = [
   {
@@ -21,7 +24,7 @@ const PROPS = [
 export function ValueProps() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-      <div className="mb-12 max-w-2xl">
+      <Reveal className="mb-12 max-w-2xl">
         <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
           La meritocracia que <span className="text-[var(--color-primary)]">no tenías</span>.
         </h2>
@@ -30,22 +33,21 @@ export function ValueProps() {
           jugador con talento real, sin contactos ni patrocinio, pueda ser visto en LATAM.
           Eso es Pulso.
         </p>
-      </div>
+      </Reveal>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <Stagger className="grid gap-6 md:grid-cols-3">
         {PROPS.map(({ icon: Icon, title, body }) => (
-          <div
-            key={title}
-            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] p-6"
-          >
-            <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-md bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
-              <Icon className="h-5 w-5" />
-            </div>
-            <h3 className="mb-2 text-lg font-semibold">{title}</h3>
-            <p className="text-sm leading-relaxed text-[var(--color-muted-foreground)]">{body}</p>
-          </div>
+          <StaggerItem key={title}>
+            <HoverLift className="h-full rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] p-6">
+              <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-md bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
+                <Icon className="h-5 w-5" />
+              </div>
+              <h3 className="mb-2 text-lg font-semibold">{title}</h3>
+              <p className="text-sm leading-relaxed text-[var(--color-muted-foreground)]">{body}</p>
+            </HoverLift>
+          </StaggerItem>
         ))}
-      </div>
+      </Stagger>
     </section>
   );
 }

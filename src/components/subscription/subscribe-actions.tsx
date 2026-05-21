@@ -6,6 +6,7 @@ import { Check, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useConfirm } from '@/components/ui/use-confirm';
 import { ApiError, useApiClient } from '@/lib/api-client';
 
 type SubStatus = 'ACTIVE' | 'PAST_DUE' | 'CANCELLED' | 'EXPIRED';
@@ -36,6 +37,7 @@ export function SubscribeActions({
 }) {
   const router = useRouter();
   const api = useApiClient();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [sub, setSub] = useState<Subscription | null>(initialSubscription);
   const [busy, setBusy] = useState<'checkout' | 'cancel' | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -60,12 +62,14 @@ export function SubscribeActions({
   }
 
   async function cancel() {
-    if (
-      !confirm(
-        '¿Cancelar Pro al final del período actual? Mantienes el acceso hasta entonces.',
-      )
-    )
-      return;
+    const ok = await confirm({
+      title: 'Cancelar Pulso Pro',
+      description:
+        'Mantienes el acceso hasta el final del período pagado. Después la suscripción no se renueva.',
+      confirmLabel: 'Cancelar suscripción',
+      variant: 'destructive',
+    });
+    if (!ok) return;
     setError(null);
     setBusy('cancel');
     try {
@@ -85,7 +89,9 @@ export function SubscribeActions({
 
   if (isActive) {
     return (
-      <Card>
+      <>
+        {confirmDialog}
+        <Card>
         <CardHeader>
           <div className="mb-2 flex items-center gap-2">
             <Badge>
@@ -116,6 +122,7 @@ export function SubscribeActions({
           )}
         </CardContent>
       </Card>
+      </>
     );
   }
 

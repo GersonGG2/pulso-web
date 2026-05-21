@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { PageTransition } from '@/components/motion';
 
 export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -9,7 +10,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
       >
         ← Dashboard
       </Link>
-      {children}
+      <PageTransition>{children}</PageTransition>
     </div>
   );
 }

@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Reveal } from '@/components/motion';
 
 export function WaitlistForm() {
   const [email, setEmail] = useState('');
@@ -18,7 +20,7 @@ export function WaitlistForm() {
 
   return (
     <section className="mx-auto max-w-3xl px-4 pb-24 sm:px-6 lg:px-8">
-      <div className="rounded-2xl border border-[var(--color-border)] bg-gradient-to-br from-[var(--color-card)] to-[var(--color-background)] p-8 sm:p-12">
+      <Reveal className="rounded-2xl border border-[var(--color-border)] bg-gradient-to-br from-[var(--color-card)] to-[var(--color-background)] p-8 sm:p-12">
         <h2 className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl">
           Sé de los primeros en jugar.
         </h2>
@@ -45,12 +47,20 @@ export function WaitlistForm() {
           </Button>
         </form>
 
-        {status === 'sent' && (
-          <p className="mt-4 text-sm text-[var(--color-primary)]">
-            Listo. Te avisamos cuando abramos cupos.
-          </p>
-        )}
-      </div>
+        <AnimatePresence>
+          {status === 'sent' && (
+            <motion.p
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3 }}
+              className="mt-4 text-sm text-[var(--color-primary)]"
+            >
+              Listo. Te avisamos cuando abramos cupos.
+            </motion.p>
+          )}
+        </AnimatePresence>
+      </Reveal>
     </section>
   );
 }
