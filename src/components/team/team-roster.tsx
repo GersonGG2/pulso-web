@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'motion/react';
@@ -9,11 +9,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { Input } from '@/components/ui/input';
 import { FadeIn, Stagger, StaggerItem, HoverLift } from '@/components/motion';
 import { ApiError, useApiClient } from '@/lib/api-client';
+import { InviteMemberModal, type InviteMemberSubmit } from './invite-member-modal';
 import { LANE_META, LANE_ORDER, type LolRole } from './lane-icons';
 import { LaneSlot, type LaneSlotMember } from './lane-slot';
+import { MemberCard } from './member-card';
 
 type TeamRole = 'STARTER' | 'SUBSTITUTE' | 'COACH' | 'MANAGER';
 
@@ -67,7 +68,7 @@ export function TeamRoster({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<Confirm>(null);
-  const [showAdd, setShowAdd] = useState<TeamRole | null>(null);
+  const [inviteOpen, setInviteOpen] = useState<TeamRole | null>(null);
   const [presetLane, setPresetLane] = useState<LolRole | undefined>();
 
   const activeMembers = team.members.filter((m) => !m.leftAt);
@@ -238,9 +239,24 @@ export function TeamRoster({
     });
   }
 
-  function openAddForLane(lane: LolRole) {
+  function openInviteForLane(lane: LolRole) {
     setPresetLane(lane);
-    setShowAdd('STARTER');
+    setInviteOpen('STARTER');
+  }
+
+  async function sendInvite(input: InviteMemberSubmit) {
+    const ok = await run('invite', () =>
+      api.post(`/teams/${team.id}/invitations`, {
+        playerId: input.playerId,
+        role: input.role,
+        lolRole: input.lolRole,
+        message: input.message,
+      }),
+    );
+    if (ok) {
+      setInviteOpen(null);
+      setPresetLane(undefined);
+    }
   }
 
   return (
@@ -341,7 +357,7 @@ export function TeamRoster({
                   isMe={member?.playerId === myPlayerId}
                   busy={busy !== null}
                   takenLanes={takenLanes}
-                  onAssign={() => openAddForLane(lane)}
+                  onAssign={() => openInviteForLane(lane)}
                   onMoveToLane={
                     member && isCaptain ? (l) => changeLane(member.playerId, l) : undefined
                   }
@@ -401,21 +417,30 @@ export function TeamRoster({
                 ? 'Agrega jugadores de respaldo para emergencias durante un torneo.'
                 : undefined
             }
-            onAdd={isCaptain ? () => setShowAdd('SUBSTITUTE') : undefined}
+            onAdd={isCaptain ? () => setInviteOpen('SUBSTITUTE') : undefined}
           />
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <AnimatePresence>
               {substitutes.map((m) => (
-                <MemberRow
+                <MemberCard
                   key={m.id}
                   member={m}
-                  isCaptainView={isCaptain}
+                  canManage={isCaptain}
                   isMe={m.playerId === myPlayerId}
                   busy={busy !== null}
-                  takenLanes={takenLanes}
                   onPromote={() => changeRole(m.playerId, 'STARTER')}
-                  onRemove={() => requestRemoveOther(m)}
+                  onTransferCaptain={
+                    isCaptain && !m.isCaptain ? () => requestTransferCaptain(m) : undefined
+                  }
+                  onRemove={
+                    isCaptain || m.playerId === myPlayerId
+                      ? () =>
+                          m.playerId === myPlayerId
+                            ? requestLeaveTeam()
+                            : requestRemoveOther(m)
+                      : undefined
+                  }
                 />
               ))}
             </AnimatePresence>
@@ -431,20 +456,26 @@ export function TeamRoster({
           <EmptyBench
             label="Sin coach ni manager"
             hint={isCaptain ? 'Opcional — staff técnico y administrativo.' : undefined}
-            onAdd={isCaptain ? () => setShowAdd('COACH') : undefined}
+            onAdd={isCaptain ? () => setInviteOpen('COACH') : undefined}
           />
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <AnimatePresence>
               {staff.map((m) => (
-                <MemberRow
+                <MemberCard
                   key={m.id}
                   member={m}
-                  isCaptainView={isCaptain}
+                  canManage={isCaptain}
                   isMe={m.playerId === myPlayerId}
                   busy={busy !== null}
-                  takenLanes={takenLanes}
-                  onRemove={() => requestRemoveOther(m)}
+                  onRemove={
+                    isCaptain || m.playerId === myPlayerId
+                      ? () =>
+                          m.playerId === myPlayerId
+                            ? requestLeaveTeam()
+                            : requestRemoveOther(m)
+                      : undefined
+                  }
                 />
               ))}
             </AnimatePresence>
@@ -453,56 +484,35 @@ export function TeamRoster({
       </section>
 
       {isCaptain && (
-        <AnimatePresence mode="wait">
-          {showAdd && (
-            <motion.div
-              key={showAdd}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 12 }}
-              transition={{ duration: 0.25 }}
-            >
-              <AddMemberForm
-                teamId={team.id}
-                defaultRole={showAdd}
-                defaultLane={presetLane}
-                busy={busy !== null}
-                onSubmit={async ({ playerId, role, lolRole }) => {
-                  const ok = await run('add', () =>
-                    api.post(`/teams/${team.id}/members`, { playerId, role, lolRole }),
-                  );
-                  if (ok) {
-                    setShowAdd(null);
-                    setPresetLane(undefined);
-                    await refresh();
-                  }
-                }}
-                onCancel={() => {
-                  setShowAdd(null);
-                  setPresetLane(undefined);
-                }}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      )}
-
-      {isCaptain && !showAdd && (
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => setShowAdd('STARTER')}>
+          <Button variant="outline" onClick={() => setInviteOpen('STARTER')}>
             <UserPlus className="h-4 w-4" />
-            Agregar starter
+            Invitar starter
           </Button>
-          <Button variant="outline" onClick={() => setShowAdd('SUBSTITUTE')}>
+          <Button variant="outline" onClick={() => setInviteOpen('SUBSTITUTE')}>
             <UserPlus className="h-4 w-4" />
-            Agregar suplente
+            Invitar suplente
           </Button>
-          <Button variant="outline" onClick={() => setShowAdd('COACH')}>
+          <Button variant="outline" onClick={() => setInviteOpen('COACH')}>
             <UserPlus className="h-4 w-4" />
-            Agregar staff
+            Invitar staff
           </Button>
         </div>
       )}
+
+      <InviteMemberModal
+        open={inviteOpen !== null}
+        defaultRole={inviteOpen ?? 'STARTER'}
+        defaultLane={presetLane}
+        excludePlayerIds={activeMembers.map((m) => m.playerId)}
+        takenLanes={takenLanes}
+        busy={busy === 'invite'}
+        onSubmit={sendInvite}
+        onCancel={() => {
+          setInviteOpen(null);
+          setPresetLane(undefined);
+        }}
+      />
 
       {!isMember && (
         <Card>
@@ -669,119 +679,3 @@ function EmptyBench({
   );
 }
 
-// -----------------------------
-// AddMemberForm
-// -----------------------------
-
-interface AddMemberFormProps {
-  teamId: string;
-  defaultRole: TeamRole;
-  defaultLane?: LolRole;
-  busy: boolean;
-  onSubmit: (input: { playerId: string; role: TeamRole; lolRole?: LolRole }) => Promise<void>;
-  onCancel: () => void;
-}
-
-function AddMemberForm({
-  defaultRole,
-  defaultLane,
-  busy,
-  onSubmit,
-  onCancel,
-}: AddMemberFormProps) {
-  const [playerId, setPlayerId] = useState('');
-  const [role, setRole] = useState<TeamRole>(defaultRole);
-  const [lolRole, setLolRole] = useState<LolRole | ''>(defaultLane ?? '');
-
-  function handle(e: FormEvent) {
-    e.preventDefault();
-    onSubmit({
-      playerId,
-      role,
-      lolRole: role === 'STARTER' && lolRole ? (lolRole as LolRole) : undefined,
-    });
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">
-          Agregar {role === 'STARTER' ? 'starter' : role === 'SUBSTITUTE' ? 'suplente' : 'staff'}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handle} className="space-y-4">
-          <Input
-            placeholder="Player ID (cuid)"
-            value={playerId}
-            onChange={(e) => setPlayerId(e.target.value)}
-            required
-          />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="text-sm">
-              <span className="mb-1 block font-medium">Tipo</span>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value as TeamRole)}
-                className="h-10 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-input)] px-3 text-sm"
-              >
-                <option value="STARTER">Starter</option>
-                <option value="SUBSTITUTE">Suplente</option>
-                <option value="COACH">Coach</option>
-                <option value="MANAGER">Manager</option>
-              </select>
-            </label>
-            <AnimatePresence>
-              {role === 'STARTER' && (
-                <motion.label
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="text-sm"
-                >
-                  <span className="mb-1 block font-medium">Lane (opcional)</span>
-                  <div className="grid grid-cols-5 gap-1">
-                    {LANE_ORDER.map((l) => {
-                      const meta = LANE_META[l];
-                      const Icon = meta.icon;
-                      const active = lolRole === l;
-                      return (
-                        <button
-                          key={l}
-                          type="button"
-                          onClick={() => setLolRole(active ? '' : l)}
-                          className={`flex flex-col items-center gap-1 rounded-md border p-2 transition-base ${
-                            active
-                              ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
-                              : 'border-[var(--color-border)] hover:border-[var(--color-primary)]/40'
-                          }`}
-                        >
-                          <Icon className="h-4 w-4" />
-                          <span className="text-[10px] uppercase tracking-wider">
-                            {meta.label}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </motion.label>
-              )}
-            </AnimatePresence>
-          </div>
-          <div className="flex gap-2">
-            <Button type="submit" disabled={busy || !playerId}>
-              {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-              Agregar
-            </Button>
-            <Button type="button" variant="outline" onClick={onCancel} disabled={busy}>
-              Cancelar
-            </Button>
-          </div>
-          <p className="text-xs text-[var(--color-muted-foreground)]">
-            Por ahora ingresa el Player ID manualmente. Buscador por username viene después.
-          </p>
-        </form>
-      </CardContent>
-    </Card>
-  );
-}

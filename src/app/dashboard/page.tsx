@@ -10,6 +10,10 @@ import {
   PendingInvitations,
   type PendingInvitation,
 } from '@/components/free-agents/pending-invitations';
+import {
+  PendingTeamInvitations,
+  type PendingTeamInvitation,
+} from '@/components/team/pending-team-invitations';
 import { CLERK_ENABLED } from '@/lib/auth';
 
 export const metadata = {
@@ -43,14 +47,16 @@ async function loadDashboardState(token: string): Promise<{
   riot: RiotAccountState;
   player: PlayerState;
   invitations: PendingInvitation[];
+  teamInvitations: PendingTeamInvitation[];
 }> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
   const headers = { Authorization: `Bearer ${token}` };
 
-  const [riotRes, playerRes, invitationsRes] = await Promise.all([
+  const [riotRes, playerRes, invitationsRes, teamInvitationsRes] = await Promise.all([
     fetch(`${apiUrl}/riot-account/me`, { headers, cache: 'no-store' }),
     fetch(`${apiUrl}/players/me`, { headers, cache: 'no-store' }),
     fetch(`${apiUrl}/free-agent-invitations/me`, { headers, cache: 'no-store' }),
+    fetch(`${apiUrl}/team-invitations/me`, { headers, cache: 'no-store' }),
   ]);
 
   return {
@@ -63,6 +69,7 @@ async function loadDashboardState(token: string): Promise<{
       data: playerRes.ok ? await playerRes.json() : null,
     },
     invitations: invitationsRes.ok ? await invitationsRes.json() : [],
+    teamInvitations: teamInvitationsRes.ok ? await teamInvitationsRes.json() : [],
   };
 }
 
@@ -78,6 +85,7 @@ export default async function DashboardPage() {
         riot: { linked: false, data: null },
         player: { created: false, data: null },
         invitations: [] as PendingInvitation[],
+        teamInvitations: [] as PendingTeamInvitation[],
       };
 
   const displayName = user.firstName ?? user.username ?? 'Jugador';
@@ -107,6 +115,12 @@ export default async function DashboardPage() {
           )}
         </header>
       </FadeIn>
+
+      {state.teamInvitations.length > 0 && (
+        <div className="mb-6">
+          <PendingTeamInvitations initialInvitations={state.teamInvitations} />
+        </div>
+      )}
 
       {state.invitations.length > 0 && (
         <div className="mb-6">
