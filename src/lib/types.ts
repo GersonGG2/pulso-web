@@ -49,6 +49,16 @@ export interface PaginatedList<T> {
   offset: number;
 }
 
+export interface TournamentSignedEntry {
+  id: string;
+  username: string | null;
+  displayName: string | null;
+  avatarUrl: string | null;
+  teamName: string | null;
+  teamTag: string | null;
+  teamLogoUrl: string | null;
+}
+
 export interface TournamentSummary {
   id: string;
   name: string;
@@ -60,12 +70,26 @@ export interface TournamentSummary {
   region: string;
   maxParticipants: number;
   entryFeeMxnCents: number;
+  prizePool: Record<string, unknown> | null;
   registrationOpensAt: string;
   registrationClosesAt: string;
   startsAt: string;
   organizer: {
     id: string;
     organizationName: string;
+    logoUrl: string | null;
     verified: boolean;
   };
+  registrationsCount: number;
+  signedSample: TournamentSignedEntry[];
+}
+
+export interface HallOfFameTeam {
+  id: string;
+  name: string;
+  tag: string;
+  country: string;
+  logoUrl: string | null;
+  tournamentsWonCount: number;
+  activeMembersCount: number;
 }

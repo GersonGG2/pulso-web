@@ -244,6 +244,21 @@ export default async function DashboardPage() {
 
         <StaggerItem><HoverLift className="h-full"><Card className="h-full">
           <CardHeader>
+            <CardTitle>Mi perfil</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-[var(--color-muted-foreground)]">
+              Edita tu información personal, lanes, redes sociales y visibilidad para
+              scouts.
+            </p>
+            <Button variant="outline" asChild className="w-full">
+              <Link href="/dashboard/profile">Editar perfil</Link>
+            </Button>
+          </CardContent>
+        </Card></HoverLift></StaggerItem>
+
+        <StaggerItem><HoverLift className="h-full"><Card className="h-full">
+          <CardHeader>
             <CardTitle>Tus equipos</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">

@@ -105,14 +105,33 @@ export function CreateTeamForm() {
           <div>
             <label className="mb-1 block text-sm font-medium">
               Logo URL{' '}
-              <span className="text-[var(--color-muted-foreground)]">(opcional)</span>
+              <span className="text-[var(--color-muted-foreground)]">(opcional, cuadrado)</span>
             </label>
             <Input
               type="url"
               value={logoUrl}
               onChange={(e) => setLogoUrl(e.target.value)}
-              placeholder="https://cdn.pulsogg.gg/teams/qtz.png"
+              placeholder="https://i.imgur.com/abc.png"
             />
+            <p className="mt-1 text-xs text-[var(--color-muted-foreground)]">
+              Pega un enlace público (Imgur, CDN propio). El upload directo llega después.
+            </p>
+            {logoUrl && (
+              <div className="mt-3 flex items-center gap-3 rounded-md border border-[var(--color-border)] p-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={logoUrl}
+                  alt="Preview"
+                  className="h-12 w-12 rounded-md object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+                <span className="text-xs text-[var(--color-muted-foreground)]">
+                  Preview · si no se ve, la URL no es pública.
+                </span>
+              </div>
+            )}
           </div>
 
           {error && (

@@ -33,6 +33,9 @@ export function HeaderAuth() {
         <Button variant="ghost" size="sm" asChild>
           <Link href="/dashboard">Dashboard</Link>
         </Button>
+        <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
+          <Link href="/dashboard/profile">Mi perfil</Link>
+        </Button>
         <UserButton
           appearance={{
             elements: {

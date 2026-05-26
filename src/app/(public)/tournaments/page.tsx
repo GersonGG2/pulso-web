@@ -1,31 +1,25 @@
-import Link from 'next/link';
-import { Trophy } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { EmptyState } from '@/components/feedback/empty-state';
-import { ErrorState } from '@/components/feedback/error-state';
-import { FadeIn, Stagger, StaggerItem, HoverLift } from '@/components/motion';
+import { FadeIn } from '@/components/motion';
+import { TournamentsBrowser } from '@/components/tournament/tournaments-browser';
 import { apiGet, ApiError } from '@/lib/api';
-import type { PaginatedList, TournamentSummary } from '@/lib/types';
+import type { PaginatedList, TournamentStatus, TournamentSummary } from '@/lib/types';
 
 export const metadata = {
   title: 'Torneos',
   description: 'Torneos abiertos de League of Legends en México y LATAM.',
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  PUBLISHED: 'Inscripciones abiertas',
-  REGISTRATION_OPEN: 'Inscripciones abiertas',
-  REGISTRATION_CLOSED: 'Inscripciones cerradas',
-  IN_PROGRESS: 'En curso',
-  COMPLETED: 'Finalizado',
-  CANCELLED: 'Cancelado',
-  DRAFT: 'Borrador',
-};
+const PAGE_SIZE = 12;
 
-async function getTournaments(): Promise<PaginatedList<TournamentSummary> | null> {
+interface Props {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+async function fetchInitial(params: URLSearchParams) {
   try {
-    return await apiGet<PaginatedList<TournamentSummary>>('/tournaments?limit=24');
+    const res = await apiGet<PaginatedList<TournamentSummary>>(
+      `/tournaments?${params.toString()}`,
+    );
+    return res;
   } catch (err) {
     if (err instanceof ApiError) {
       console.error(`Tournaments fetch failed: ${err.status} ${err.message}`);
@@ -34,89 +28,62 @@ async function getTournaments(): Promise<PaginatedList<TournamentSummary> | null
   }
 }
 
-export default async function TournamentsPage() {
-  const data = await getTournaments();
+export default async function TournamentsPage({ searchParams }: Props) {
+  const sp = await searchParams;
+  const q = typeof sp.q === 'string' ? sp.q : '';
+  const statusRaw = typeof sp.status === 'string' ? sp.status : '';
+  const sortRaw = typeof sp.sort === 'string' ? sp.sort : 'starting';
+  const page = typeof sp.page === 'string' ? Math.max(1, Number(sp.page) || 1) : 1;
+
+  const ALLOWED_STATUSES: TournamentStatus[] = [
+    'PUBLISHED',
+    'REGISTRATION_OPEN',
+    'REGISTRATION_CLOSED',
+    'IN_PROGRESS',
+    'COMPLETED',
+  ];
+  const status = (ALLOWED_STATUSES as string[]).includes(statusRaw)
+    ? (statusRaw as TournamentStatus)
+    : '';
+  const sort = (['starting', 'popular', 'recent'] as const).includes(
+    sortRaw as 'starting' | 'popular' | 'recent',
+  )
+    ? (sortRaw as 'starting' | 'popular' | 'recent')
+    : 'starting';
+
+  const params = new URLSearchParams();
+  if (q) params.set('q', q);
+  if (status) params.set('status', status);
+  if (sort) params.set('sort', sort);
+  params.set('limit', String(PAGE_SIZE));
+  params.set('offset', String((page - 1) * PAGE_SIZE));
+
+  const initial = await fetchInitial(params);
+  const fallback: PaginatedList<TournamentSummary> = {
+    items: [],
+    total: 0,
+    limit: PAGE_SIZE,
+    offset: 0,
+  };
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
       <FadeIn>
-        <div className="mb-8 flex items-end justify-between">
-          <div>
-            <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
-              Torneos
-            </h1>
-            <p className="mt-3 text-[var(--color-muted-foreground)]">
-              Encuentra el siguiente torneo donde competir.
-            </p>
-          </div>
-        </div>
+        <header className="mb-8 max-w-2xl">
+          <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+            Torneos
+          </h1>
+          <p className="mt-3 text-[var(--color-muted-foreground)]">
+            Encuentra el siguiente torneo donde competir. Filtra por estado, ordena por
+            prize pool y busca por nombre u organizador.
+          </p>
+        </header>
       </FadeIn>
 
-      {!data ? (
-        <ErrorState
-          title="No pudimos cargar los torneos"
-          description="Verifica que el backend esté disponible y vuelve a intentar."
-        />
-      ) : data.items.length === 0 ? (
-        <EmptyState
-          icon={Trophy}
-          title="Aún no hay torneos publicados"
-          description="Cuando un organizador publique su primer torneo, aparecerá aquí."
-        />
-      ) : (
-        <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {data.items.map((t) => (
-            <StaggerItem key={t.id}>
-              <Link href={`/t/${t.slug}`} className="group block h-full">
-                <HoverLift className="h-full">
-                  <Card className="h-full transition-base group-hover:border-[var(--color-primary)]/40">
-                    <CardHeader>
-                      <div className="mb-2 flex items-center gap-2">
-                        <Badge variant="outline">{t.modality.replace('_', ' ')}</Badge>
-                        <Badge>{STATUS_LABEL[t.status] ?? t.status}</Badge>
-                      </div>
-                      <CardTitle className="line-clamp-2 group-hover:text-[var(--color-primary)]">
-                        {t.name}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2 text-sm text-[var(--color-muted-foreground)]">
-                      <p className="line-clamp-2">{t.description}</p>
-                      <div className="flex items-center gap-4 pt-2 text-xs">
-                        <span>
-                          Inicia{' '}
-                          <span className="text-[var(--color-foreground)]">
-                            {new Date(t.startsAt).toLocaleDateString('es-MX', {
-                              day: 'numeric',
-                              month: 'short',
-                            })}
-                          </span>
-                        </span>
-                        <span>
-                          Cupo{' '}
-                          <span className="text-[var(--color-foreground)]">
-                            {t.maxParticipants}
-                          </span>
-                        </span>
-                        {t.entryFeeMxnCents > 0 && (
-                          <span>
-                            $<span className="text-[var(--color-foreground)]">
-                              {(t.entryFeeMxnCents / 100).toFixed(0)}
-                            </span>{' '}
-                            MXN
-                          </span>
-                        )}
-                        {t.entryFeeMxnCents === 0 && (
-                          <span className="text-[var(--color-primary)]">Gratis</span>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </HoverLift>
-              </Link>
-            </StaggerItem>
-          ))}
-        </Stagger>
-      )}
+      <TournamentsBrowser
+        initialData={initial ?? fallback}
+        initialFilters={{ q, status, sort, page }}
+      />
     </div>
   );
 }

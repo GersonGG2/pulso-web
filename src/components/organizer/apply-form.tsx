@@ -17,6 +17,7 @@ export function ApplyOrganizerForm() {
   const [contactPhone, setContactPhone] = useState('');
   const [rfc, setRfc] = useState('');
   const [website, setWebsite] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
 
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -32,6 +33,7 @@ export function ApplyOrganizerForm() {
         ...(contactPhone && { contactPhone }),
         ...(rfc && { rfc: rfc.toUpperCase() }),
         ...(website && { website }),
+        ...(logoUrl && { logoUrl }),
       });
       router.push('/dashboard/organizer');
       router.refresh();
@@ -112,6 +114,39 @@ export function ApplyOrganizerForm() {
               onChange={(e) => setWebsite(e.target.value)}
               placeholder="https://ligapulso.mx"
             />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">
+              URL del logo{' '}
+              <span className="text-[var(--color-muted-foreground)]">(opcional)</span>
+            </label>
+            <Input
+              type="url"
+              value={logoUrl}
+              onChange={(e) => setLogoUrl(e.target.value)}
+              placeholder="https://i.imgur.com/abc.png"
+            />
+            <p className="mt-1 text-xs text-[var(--color-muted-foreground)]">
+              Por ahora pega un enlace público (Imgur, CDN propio, Drive público). El upload
+              directo llega después.
+            </p>
+            {logoUrl && (
+              <div className="mt-3 flex items-center gap-3 rounded-md border border-[var(--color-border)] p-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={logoUrl}
+                  alt="Preview"
+                  className="h-12 w-12 rounded-md object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+                <span className="text-xs text-[var(--color-muted-foreground)]">
+                  Preview · si no se ve la imagen, revisa que la URL sea pública.
+                </span>
+              </div>
+            )}
           </div>
 
           {error && (

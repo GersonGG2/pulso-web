@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
+import { ProgressBar } from '@/components/layout/progress-bar';
 import { inter, jetbrainsMono, russoOne } from '@/lib/fonts';
 import { cn } from '@/lib/utils';
 import './globals.css';
@@ -90,6 +91,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="flex min-h-dvh flex-col">
         <AuthProvider>
+          <ProgressBar />
           <Header />
           <main className="flex-1">{children}</main>
           <Footer />

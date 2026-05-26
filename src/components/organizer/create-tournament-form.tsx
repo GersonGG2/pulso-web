@@ -132,14 +132,31 @@ export function CreateTournamentForm() {
           <div>
             <label className="mb-1 block text-sm font-medium">
               Banner URL{' '}
-              <span className="text-[var(--color-muted-foreground)]">(opcional)</span>
+              <span className="text-[var(--color-muted-foreground)]">(opcional, 16:9)</span>
             </label>
             <Input
               type="url"
               value={bannerUrl}
               onChange={(e) => setBannerUrl(e.target.value)}
-              placeholder="https://cdn.pulsogg.gg/tournaments/..."
+              placeholder="https://i.imgur.com/abc.png"
             />
+            <p className="mt-1 text-xs text-[var(--color-muted-foreground)]">
+              Pega un enlace público (Imgur, CDN propio, Drive público). El upload directo
+              llega después.
+            </p>
+            {bannerUrl && (
+              <div className="mt-3 overflow-hidden rounded-md border border-[var(--color-border)]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={bannerUrl}
+                  alt="Preview"
+                  className="aspect-[16/9] w-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
